@@ -1,6 +1,6 @@
 ---
 title: "Occurrance of Dementia"
-author: "Dominic Munns"
+author: "Y3865992"
 date: "02/12/2020"
 output: html_document
 ---
@@ -15,11 +15,15 @@ knitr::opts_chunk$set(echo = FALSE,
 library(tidyverse)
 library(caret)
 library(GGally)
+library(readxl)
 ```
 
 ```{r import}
-file <- "raw_data/dementia.csv"
-dementia <- read_csv(file)
+visit_data <- read_xlsx("raw_data/dementia.xlsx",
+                         sheet = "visit data")
+
+patient_data <- read_xlsx("raw_data/dementia.xlsx",
+                          sheet = "patient data")
 ```
 
 # Introduction
