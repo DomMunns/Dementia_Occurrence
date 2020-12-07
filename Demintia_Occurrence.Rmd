@@ -19,11 +19,16 @@ library(readxl)
 ```
 
 ```{r import}
+# import the data from separate sheets as different data sets
 visit_data <- read_xlsx("raw_data/dementia.xlsx",
                          sheet = "visit data")
 
 patient_data <- read_xlsx("raw_data/dementia.xlsx",
                           sheet = "patient data")
+```
+
+```{r tidy}
+
 ```
 
 # Introduction
@@ -32,6 +37,9 @@ patient_data <- read_xlsx("raw_data/dementia.xlsx",
 
 # Results
 
+```{r figures}
+
+```
 # Discussion
 
 # References
