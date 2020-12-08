@@ -40,8 +40,10 @@ patient_data <- patient_data %>%
 ```{r summarise}
 # summarise both sets of data
 visit_sum <- summary(visit_data)
+visit_sum
 
 patient_sum <- summary(patient_data)
+patient_sum
 
 ```
 
