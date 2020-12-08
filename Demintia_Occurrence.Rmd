@@ -28,6 +28,20 @@ patient_data <- read_xlsx("raw_data/dementia.xlsx",
 ```
 
 ```{r tidy}
+# tidy the data so that column names are lowercase and spaces are filled with underscores
+visit_data <- visit_data %>%
+  janitor::clean_names()
+
+patient_data <- patient_data %>%
+  janitor::clean_names()
+
+```
+
+```{r summarise}
+# summarise both sets of data
+visit_sum <- summary(visit_data)
+
+patient_sum <- summary(patient_data)
 
 ```
 
