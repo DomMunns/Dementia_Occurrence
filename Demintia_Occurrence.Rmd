@@ -18,17 +18,16 @@ library(GGally)
 library(readxl)
 ```
 
-```{r import}
+```{r import, include=FALSE}
+
 # import the data from separate sheets as different data sets
 visit_data <- read_xlsx("raw_data/dementia.xlsx",
                          sheet = "visit data")
 
 patient_data <- read_xlsx("raw_data/dementia.xlsx",
                           sheet = "patient data")
-```
 
-```{r tidy}
-# tidy the data so that column names are lowercase and spaces are filled with underscores
+# tidy the data so that column names are lowercase and spaces are filled with underscores using the janitor function
 visit_data <- visit_data %>%
   janitor::clean_names()
 
@@ -37,16 +36,33 @@ patient_data <- patient_data %>%
 
 ```
 
-```{r summarise}
-# summarise both sets of data
-visit_sum <- summary(visit_data)
-visit_sum
+```{r merge, include=FALSE}
+# merge the two data sets into one so analysis can be carried out
 
-patient_sum <- summary(patient_data)
-patient_sum
+dementia_data <- merge(visit_data, patient_data, by = "subject_id")
+
+# After merging for some patients their second MRI was listed above their first, to change this I arranged the data by first subject id then MRI number in ascending order
+dementia_data <- dementia_data %>%
+  arrange(subject_id, mri_number)
+```
+
+```{r filter, include=FALSE}
+
+# take the rows out of the patient dataset with missing data
+patient_data <- patient_data %>%
+filter(!is.na(ses))
 
 ```
 
+```{r summarise, include=TRUE}
+# summarise the merged data set
+
+dementia_sum <- summary(dementia_data)
+dementia_sum
+
+```
+
+```
 # Introduction
 
 # Methods
