@@ -3,6 +3,7 @@ title: "Occurrance of Dementia"
 author: "Y3865992"
 date: "02/12/2020"
 output: html_document
+bibliography: [References/references.bib]
 ---
 
 ```{r setup, include=FALSE}
@@ -16,15 +17,17 @@ library(tidyverse)
 library(caret)
 library(GGally)
 library(readxl)
+library(RefManageR)
+library(citr)
 ```
 
 ```{r import, include=FALSE}
 
 # import the data from separate sheets as different data sets
-visit_data <- read_xlsx("raw_data/dementia.xlsx",
+visit_data <- read_xlsx("Data/raw_data/dementia.xlsx",
                          sheet = "visit data")
 
-patient_data <- read_xlsx("raw_data/dementia.xlsx",
+patient_data <- read_xlsx("Data/raw_data/dementia.xlsx",
                           sheet = "patient data")
 
 # tidy the data so that column names are lowercase and spaces are filled with underscores using the janitor function
@@ -48,30 +51,34 @@ dementia_data <- dementia_data %>%
 
 ```{r filter, include=FALSE}
 
-# take the rows out of the patient dataset with missing data
-patient_data <- patient_data %>%
+# take the rows out of the dataset with missing data
+dementia_data <- dementia_data %>%
 filter(!is.na(ses))
 
 ```
 
-```{r summarise, include=TRUE}
+```{r summary}
 # summarise the merged data set
-
 dementia_sum <- summary(dementia_data)
 dementia_sum
 
 ```
 
 ```
-# Introduction
+## Introduction
 
-# Methods
+## Methods
 
-# Results
+## Results
 
 ```{r figures}
 
 ```
-# Discussion
+## Discussion
 
-# References
+## Bibliography
+```{r references, message=FALSE, warning=FALSE, include=FALSE}
+#write .bib file containing references for the packages used
+knitr::write_bib(c(), 
+                 width = 60, file = "References/references.bib")
+```
