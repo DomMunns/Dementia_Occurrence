@@ -57,14 +57,12 @@ filter(!is.na(ses))
 
 ```
 
-```{r summary}
+```{r summary, include=FALSE}
 # summarise the merged data set
 dementia_sum <- summary(dementia_data)
 dementia_sum
-
 ```
 
-```
 ## Introduction
 
 ## Methods
@@ -76,9 +74,17 @@ dementia_sum
 ```
 ## Discussion
 
+```{r word count, include=FALSE}
+# write a fucntion which updates the word count automatically including the Read.me file
+word_count <- wordcountaddin::word_count("Dementia_Occurence.Rmd")
+```
+
 ## Bibliography
 ```{r references, message=FALSE, warning=FALSE, include=FALSE}
-#write .bib file containing references for the packages used
-knitr::write_bib(c(), 
+# write .bib file containing references for the packages used
+knitr::write_bib(c("base", 
+                   "tidyverse", 
+                   "ggplot2",
+                   "knitr", 
+                   "bibtex"), 
                  width = 60, file = "References/references.bib")
-```
