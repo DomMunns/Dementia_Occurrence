@@ -17,8 +17,7 @@ library(tidyverse)
 library(caret)
 library(GGally)
 library(readxl)
-library(RefManageR)
-library(citr)
+library(devtools)
 ```
 
 ```{r import, include=FALSE}
@@ -75,16 +74,9 @@ dementia_sum
 ## Discussion
 
 ```{r word count, include=FALSE}
-# write a fucntion which updates the word count automatically including the Read.me file
-word_count <- wordcountaddin::word_count("Dementia_Occurence.Rmd")
+# write a function which updates the word count automatically including the Read.me file
+# devtools::install_github("benmarwick/wordcountaddin", type = "source", dependencies = TRUE)
 ```
 
 ## Bibliography
-```{r references, message=FALSE, warning=FALSE, include=FALSE}
-# write .bib file containing references for the packages used
-knitr::write_bib(c("base", 
-                   "tidyverse", 
-                   "ggplot2",
-                   "knitr", 
-                   "bibtex"), 
-                 width = 60, file = "References/references.bib")
+
