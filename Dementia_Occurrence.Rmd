@@ -67,17 +67,17 @@ dementia_sum <- summary(dementia_data)
 dementia_sum
 ```
 
-## Introduction
+# Introduction
 R is the best
 
-## Methods
+# Methods
 
-## Results
+# Results
 
 ```{r figures}
 
 ```
-## Discussion
+# Discussion
 
 ## Word Count
 
@@ -96,5 +96,5 @@ The README file: `r wc_readme`
 
 Total:  `r wc_rmd + wc_readme`
 
-## Bibliography
+# Bibliography
 
