@@ -25,6 +25,16 @@ library(dplyr)
 source("Word_count/word_count_addin.R")
 ```
 
+# Introduction
+
+Quick description of what I'm looking at
+
+# Methods
+
+## Data description
+
+There is one data file 
+
 ```{r import, include=FALSE}
 
 # import the data from separate sheets as different data sets
@@ -42,6 +52,8 @@ patient_data <- patient_data %>%
   janitor::clean_names()
 
 ```
+
+## Data preparation
 
 ```{r merge, include=FALSE}
 # merge the two data sets into one so analysis can be carried out
@@ -66,11 +78,6 @@ filter(!is.na(ses))
 dementia_sum <- summary(dementia_data)
 dementia_sum
 ```
-
-# Introduction
-R is the best
-
-# Methods
 
 # Results
 
