@@ -20,6 +20,11 @@ library(readxl)
 library(dplyr)
 ```
 
+```{r functions}
+# word_count calculates the word count for files both rmd and md
+source("Word_count/word_count_addin.R")
+```
+
 ```{r import, include=FALSE}
 
 # import the data from separate sheets as different data sets
@@ -78,8 +83,6 @@ R is the best
 
 ```{r word count, include=FALSE}
 # using a word count addin to calculate the word count of the rmd file and the read.me file
-# bring in the word count function from another R file
-source("Word_count/word_count_addin.R")
 
 # use separate word counts for the rmd and the readme file 
 # can add them together to show total word count
