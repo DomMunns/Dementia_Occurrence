@@ -17,7 +17,7 @@ library(tidyverse)
 library(caret)
 library(GGally)
 library(readxl)
-library(devtools)
+library(dplyr)
 ```
 
 ```{r import, include=FALSE}
@@ -63,6 +63,7 @@ dementia_sum
 ```
 
 ## Introduction
+R is the best
 
 ## Methods
 
@@ -73,10 +74,24 @@ dementia_sum
 ```
 ## Discussion
 
+## Word Count
+
 ```{r word count, include=FALSE}
-# write a function which updates the word count automatically including the Read.me file
-# devtools::install_github("benmarwick/wordcountaddin", type = "source", dependencies = TRUE)
+# using a word count addin to calculate the word count of the rmd file and the read.me file
+# bring in the word count function from another R file
+source("Word_count/word_count_addin.R")
+
+# use separate word counts for the rmd and the readme file 
+# can add them together to show total word count
+wc_rmd <- count_words("Dementia_Occurrence.Rmd")
+wc_readme <- count_words("README.md")
+
 ```
+This document: `r wc_rmd`
+
+The README file: `r wc_readme`
+
+Total:  `r wc_rmd + wc_readme`
 
 ## Bibliography
 
