@@ -1,8 +1,9 @@
 ---
-title: "Occurrance of Dementia"
+title: "Using supervised machine learning to determine the importance of mini-mental state examination score and normalized whole-brain volume when predicting dementia group"
 author: "Y3865992"
 date: "02/12/2020"
-output: html_document
+output:
+  bookdown::html_document2: default
 bibliography: [References/references.bib]
 ---
 
@@ -10,14 +11,16 @@ bibliography: [References/references.bib]
 knitr::opts_chunk$set(echo = FALSE,
                       warning = FALSE,
                       message = FALSE)
+
 ```
 
 ```{r packages}
 library(tidyverse)
 library(caret)
-library(GGally)
 library(readxl)
 library(dplyr)
+library(rmarkdown)
+library(bookdown)
 ```
 
 ```{r functions}
@@ -25,26 +28,74 @@ library(dplyr)
 source("Word_count/word_count_addin.R")
 ```
 
-# Introduction
+```{r theme}
+# create my own theme to use on my plots so they look how I want them to
+# used theme_bw as a base to then change to my preference from there
 
-Quick description of what I'm looking at
+theme_dom <- function() {
+  theme_bw(base_size = 12, base_family = "sans") %+replace%
+    theme( 
+      panel.background = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.border = element_blank(),
+      axis.line = element_line(color = "black")
+      )
+}
 
-# Methods
+```
 
-## Data description
+# Introduction {-}
 
-There is one data file 
+Dementia  is a broad category for age-related diseases caused by a loss of 20% of brain function. Dementia is characterised by cognitive impairment, which represents a decline from previous level of functioning, and is associated with impairment in functional abilities [@Dementia]. It is estimated that 850,00 people in the UK, and 54 million people globally are living with dementia [@Prince2015]. One million people in the UK are projected to have dementia by 2015 and this is though to increase to 2 million by 2050 [@Prince2014]. The increasing prevalence of Dementia has made the diagnosis of patients critical. To aid in diagnosis researchers are keen to predict dementia group from data collected from subject visits. The Mini-Mental state Examination (MMSE) is a 30 point questionnaire that is used to assess mental status [@Kurlowicz1999]. Scores greater or equal to 24 indicate normal cognition. Scores less than 24 indicate cognitive impairment and correlate with dementia: mild (19-23), moderate (10-18) or severe (≤ 9 points). Normalized whole-brain volume (nWBV) is the proportion of voxels that are labeled as gray or white matter in the atlas-masked image expressed as a percentage. The aim of this project is to determine the importance of MMSE and nWBV in predicting dementia group by producing reproducible models with and without MMSE and nWBV. 
+
+# Methods {-}
+
+## Data description {-}
+
+There are two data sets in separate sheets contained in the same file: [dementia.xlsx](.../Data/raw_data/dementia.xlsx)
+
+The subjects were right-handed men and women aged 60 to 96. Each subject was scanned on two or more visits, separated by at least one year for a total of 373 imagine sessions. In a single scan session three or four individual T1-weighted MRI scans were obtained per subject. Subjects were characterised as nondemented, demented or converted (nondemented on their initial visit but characterised as demented at a later visit). Each subject was allocated a subject id, this subject id is the same for each subject in both data sheets.
+
+The data in the visit data sheet are the data taken from subject visits and data obtained from MRI scans. Each row contains the data collected at a single visit, ordered by subject id and arranged in columns. The data collected and column titles are:
+
+- subject id
+- mri number
+- Visit: Number of visit
+- Age
+- MMSE: Mini-Mental state Examination
+- CDR: Clinical Dementia Rating 
+- eTIV: Estimated total intracranial volume
+- nWBV: Normalized whole-brain volume
+- ASF: Atlas scaling factor 
+
+The data in the patient data sheet are general data about the subject and their dementia group. Each row contains the data about a single subject ordered by subject id and arranged in columns. The data collected and column titles are:
+
+- Subject ID
+- Group 
+- M/F - Gender
+- EDUC - Years of education
+- SES - Socioeconomic status 
+
+
+## Data preparation {-}
+
+`tidyverse` with the `readxl` package was used to import the data from the excel file [@R-readxl]. To process the raw data `tidyverse` packages were used [@R-tidyverse]. The two data sheets were imported into separate data frames before being merged into one data frame that is ordered first by subject id then MRI number. Rows of the data set with missing data were filtered out. 
 
 ```{r import, include=FALSE}
 
-# import the data from separate sheets as different data sets
+# import the data from the separate sheets into separate data frames
 visit_data <- read_xlsx("Data/raw_data/dementia.xlsx",
                          sheet = "visit data")
+
+# visit_data is 373 observations of 9 variables
 
 patient_data <- read_xlsx("Data/raw_data/dementia.xlsx",
                           sheet = "patient data")
 
-# tidy the data so that column names are lowercase and spaces are filled with underscores using the janitor function
+# patient_data is 150 observations of 5 variables
+
+# tidy the data in both dataframes so that column names are lowercase and spaces are filled with underscores using the janitor function
 visit_data <- visit_data %>%
   janitor::clean_names()
 
@@ -53,23 +104,23 @@ patient_data <- patient_data %>%
 
 ```
 
-## Data preparation
-
 ```{r merge, include=FALSE}
-# merge the two data sets into one so analysis can be carried out
+# Merge the two data frames into one singular data frame so analysis can be carried out on the data as a whole
 
 dementia_data <- merge(visit_data, patient_data, by = "subject_id")
 
-# After merging for some patients their second MRI was listed above their first, to change this I arranged the data by first subject id then MRI number in ascending order
+# After merging for some patients their second MRI was listed above their first, to solve this I arranged the data by first subject id then MRI number in ascending order
 dementia_data <- dementia_data %>%
   arrange(subject_id, mri_number)
 ```
 
 ```{r filter, include=FALSE}
 
-# take the rows out of the dataset with missing data
+# remove the rows of the data set with missing data so all the data is complete
 dementia_data <- dementia_data %>%
 filter(!is.na(ses))
+
+# the data is 354 observations of 13 variables
 
 ```
 
@@ -77,31 +128,257 @@ filter(!is.na(ses))
 # summarise the merged data set
 dementia_sum <- summary(dementia_data)
 dementia_sum
-```
-
-# Results
-
-```{r figures}
 
 ```
-# Discussion
 
-## Word Count
+```{r convert, include=FALSE}
+# in order to carry out an LDA to predict the groups of the patients I need to change male and female into factors 
+
+dementia_data <- dementia_data %>%
+  mutate(m_f=recode(m_f, "F" = 2, "M" = 1))
+
+```
+
+## Linear Discriminant Analysis models {-}
+
+To determine the importance of MMSE and nWBV when predicting dementia group of patients, two Linear Discriminant Analysis (LDA) models were used. The LDA models were carried out using the package `caret` [@R-caret]. LDA is a supervised method of machine learning. LDA is a method used to find a linear combination of features that separates two or more classes of objects. LDA attempts to model the difference between the classes of data, in this case the dementia groups: Demented, Nondemented and Converted. The first LDA model produced includes the factors age, education, social economic status and gender. The second LDA model includes the same factors included in the first model along with MMSE and nWBV. The two models' accuracy will be compared to determine the importance of MMSE and nWBV in predicting dementia group.
+
+Overall statistics for the test data of both LDA models were extracted into separate data frames. These data frames were merged into a single data frame. To allow for plots to be produced from this data the data frame was transposed. 
+
+```{r lda 1, include=FALSE}
+# use an LDA model to determine how well these different factors can predict the group of a patient by using their age, education, ses and gender without MMSE and nWBV
+
+# set seed and split dataset into training and testing sets, use set.seed to make these reproducible
+set.seed(seed = 840)
+
+# create a vector of row number that will be used to split the data set in to training and testing sets
+ids_1 <- createDataPartition(y = dementia_data$group,
+                             p = 0.75, list = FALSE)
+
+# use the dplyr function to slice the data set into training and testing sets
+train_1 <- dementia_data %>% slice (ids_1)
+test_1 <- dementia_data %>% slice (-ids_1)
+
+# perform the lda on the training data 
+lda_1 <- train_1 %>%
+  select(age, educ, ses, m_f) %>%
+  MASS::lda(grouping = train_1$group)
+
+# predict classes of training data based on the lda model
+plda_train_1 <- train_1 %>%
+  select(age, educ, ses, m_f) %>%
+  predict(object = lda_1)
+
+# examine the confusion matrix of the training prediction and extract into a data frame
+cm_train_1 <- confusionMatrix(plda_train_1$class, factor(train_1$group))
+
+# predict classes of test data based on the lda model
+plda_test_1 <- test_1 %>%
+  select(age, educ, ses, m_f) %>%
+  predict(object = lda_1)
+
+# examine the confusion matrix of the testing prediction and extract into a dataframe
+cm_test_1 <- confusionMatrix(plda_test_1$class, factor(test_1$group))
+
+# extract the scores from the test and train predictions into separate dataframes
+lda_labelled_train_1 <- data.frame(plda_train_1$x,
+                                   group = train_1$group)
+lda_labelled_test_1 <- data.frame(plda_test_1$x,
+                                   group = test_1$group)
+
+# extract the overall statistics for test data into a data frame from model 1
+overall_lda_test_1 <- data.frame(cm_test_1$overall)
+
+# tidy the data using the janitor function
+overall_lda_test_1 <- overall_lda_test_1 %>%
+janitor::clean_names()
+```
+
+
+```{r lda 2, include=FALSE}
+# use an LDA model to determine how well these factors can predict the group of a patient by using their age, education, ses and gender as well as MMSE and nWBV
+
+# set seed and split dataset into training and testing sets, use set.seed to make these reproducible
+set.seed(seed = 840)
+
+# create a vector of row number that will be used to split the data set in to training and testing sets
+ids_2 <- createDataPartition(y = dementia_data$group,
+                             p = 0.75, list = FALSE)
+
+# use the dplyr function to slice the dataset into training and testing sets
+train_2 <- dementia_data %>% slice (ids_2)
+test_2 <- dementia_data %>% slice (-ids_2)
+
+# perform the lda on the training data
+lda_2 <- train_2 %>%
+  select(age, educ, ses, m_f, mmse, n_wbv) %>%
+  MASS::lda(grouping = train_2$group)
+
+# predict classes of training data based on the lda model
+plda_train_2 <- train_2 %>%
+  select(age, educ, ses, m_f, mmse, n_wbv) %>%
+  predict(object = lda_2)
+
+# examine the confusion matrix of the training prediction
+cm_train_2 <- confusionMatrix(plda_train_2$class, factor(train_2$group))
+
+# predict classes of test data based on the lda model
+plda_test_2 <- test_2 %>%
+  select(age, educ, ses, m_f, mmse, n_wbv) %>%
+  predict(object = lda_2)
+
+# examine the confusion matrix of the testing prediction and extract into a dataframe
+cm_test_2 <- confusionMatrix(plda_test_2$class, factor(test_2$group))
+
+# extract the scores from the test and train predictions into separate dataframes
+lda_labelled_train_2 <- data.frame(plda_train_2$x,
+                                   group = train_2$group)
+lda_labelled_test_2 <- data.frame(plda_test_2$x,
+                                   group = test_2$group)
+
+# extract the overall statistics for test data into a data frame
+overall_lda_test_2 <- data.frame(cm_test_2$overall)
+
+# tidy the data using the janitor function
+overall_lda_test_2 <- overall_lda_test_2 %>%
+janitor::clean_names()
+```
+
+```{r lda merge, include=FALSE}
+# to be able to produce a bar chart comparing the accuracy of the two models I need merge the overall statistics for both the models
+overall_lda_data <- bind_cols(overall_lda_test_1, overall_lda_test_2)
+
+# transpose the data set
+overall_data <- data.frame(t(overall_lda_data))
+
+# add a column with the model numbers so a bar chart can be made using model number
+overall_data$Model <- c("1", "2")
+
+# extract data values for the accuracy , the upper and lower CI for both models so it can be implemented into the knit
+# round the values to 3 significant figures
+model_1_accuracy <- overall_data[1,1]
+model_1_accuracy <- signif(model_1_accuracy, 3)
+
+model_2_accuracy <- overall_data[2,1]
+model_2_accuracy <- signif(model_2_accuracy, 3)
+
+model_1_upper <- overall_data[1,4]
+model_1_upper <- signif(model_1_upper, 3)
+
+model_2_upper <- overall_data[2,4]
+model_2_upper <- signif(model_2_upper, 3)
+
+model_1_lower <- overall_data[1,3]
+model_1_lower <- signif(model_1_lower, 3)
+
+model_2_lower <- overall_data[2,3]
+model_2_lower <- signif(model_2_lower, 3)
+```
+
+
+# Results {-}
+
+All figures were produced using `ggplot` from the `ggplot2` package and saved in a file named Figures using `ggsave` [@R-ggplot2]. The `rmarkdown` [@R-markdown] and bookdown [@R-bookdown] packages were used to produce figure legends. 
+
+Scatter plots showing the separation between each group of the first two linear discriminates for model 1 and model 2 were plotted using `ggplot` from the `ggplot2` package [@R-ggplot2] (see figure \@ref(fig:scatter-fig)). 
+
+A bar chart comparing the accuracy of the two LDA models was plotted using data from the `overall_data` frame. The accuracy for model 1 is `r model_1_accuracy` and the accuracy of model 2 is `r model_2_accuracy`. The difference between the accuracy of the two models is not significant as the error bars overlap (see figure \@ref(fig:bar-fig)).
+
+(ref:scat-fig)  A. Linear discriminant analysis model with the factors age, education, ses and gender. The accuracy of model 1 is `r model_1_accuracy` (3sf). B. Linear discriminant analysis model  with the factors age, education, ses, gender, MMSE and nWBV. The accuracy of model 2 is `r model_2_accuracy`  (3sf).
+
+```{r scatter-fig, fig.show = "hold", out.width ="50%", fig.cap='(ref:scat-fig)'}
+# produce a scatter plot for lda model 1
+# used my user created theme to make sure all my figures are uniform
+fig_1 <- lda_labelled_test_1 %>%
+  ggplot(aes(x = LD1, y = LD2, colour = group))+
+  geom_point()+
+  labs(color="Group")+
+  ggtitle("A")+
+  scale_x_continuous(limits = c(-2,2), expand = c(0,0))+
+  scale_y_continuous(limits = c(-2,2), expand = c(0,0))+
+  theme_dom()
+
+fig_1
+
+# save the model 1 scatter plot as a jpeg file into a file named Figures using ggsave
+ggsave("Figures/Figure_3.1A.jpeg", plot = fig_1,
+       width = 8, height = 5)
+
+# produce a scatter plot for lda model 2
+# used my user created theme to make sure all my figures are uniform
+fig_2 <- lda_labelled_test_2 %>%
+  ggplot(aes(x = LD1, y = LD2, colour = group))+
+  geom_point()+
+  labs(color="Group")+
+  ggtitle("B")+
+  scale_x_continuous(limits = c(-2,2), expand = c(0,0))+
+  scale_y_continuous(limits = c(-2,2), expand = c(0,0))+
+  theme_dom()
+
+fig_2
+
+# save the model 2 scatter plot as a jpeg file into a file named Figures using ggsave
+ggsave("Figures/Figure_3.1B.jpeg", plot = fig_2,
+       width = 8, height = 5)
+```
+
+(ref:lda-comp) Bar chart showing the accuracy of model 1 and model 2. Error bars are 95% confidence intervals. The accuracy of model 1 is `r model_1_accuracy` (3sf) and the 95% confidence interval is `r model_1_lower` (3sf) - `r model_1_upper` (3sf). The accuracy of model 2 is `r model_2_accuracy`  (3sf) and the 95% confidence interval is `r model_2_lower` (3sf) - `r model_2_upper` (3sf).
+
+```{r bar-fig, fig.cap='(ref:lda-comp)'}
+# create bar chart to compare the accuracy of the two models
+# use 95% CI to create error bars
+fig_3 <- overall_data %>%
+  ggplot(aes(x = Model, y = Accuracy))+
+  scale_y_continuous(limits = c(0,0.8), expand = c(0,0), breaks=0:10*0.1) +
+  geom_bar(stat = 'identity', size = 1, width = 0.8, fill = c("salmon", "skyblue"))+
+  geom_errorbar(aes(ymin=Accuracy-(Accuracy-AccuracyLower),
+                    ymax=Accuracy+(AccuracyUpper-Accuracy)),
+                width=.4,                    
+                position=position_dodge(.9))+
+  ylab("Accuracy (Percent)")+
+  theme_dom()
+
+fig_3
+
+# save the bar chart as a jpeg file into a file named Figures using ggsave
+ggsave("Figures/Figure_3.2.jpeg", plot = fig_3,
+       width = 4, height = 4)
+```
+
+
+# Conclusions {-}
+
+A reproducible protocol for determining the importance of MMSE and nWBV in predicting dementia group has been produced. Upon visualizing the accuracy of the LDA models in a bar chart it is easy to differentiate the accuracy of the two models with and without MMSE and nWBV. The data shows that there is no significant difference in the accuracy of the LDA model when MMSE and nWBV are included into the model.
+
+These findings can be further developed by using LDA models to determine which combination of factors obtained during subject visits are the most successful for predicting dementia group. This method of modeling to predict the dementia group can also be used to predict Clinical Dementia Rating which is a value used to diagnose dementia patients.
+
+
+
+```{r session info, include=FALSE}
+file <- "sessioninfo.md"
+writeLines(capture.output(sessionInfo()), file)
+```
+
+## Word Count {-}
+
+Word count calculated with word_count_addin supplied by Emma Rand. Session information has also been added to the word count as it is written into a distinct file.
 
 ```{r word count, include=FALSE}
 # using a word count addin to calculate the word count of the rmd file and the read.me file
 
-# use separate word counts for the rmd and the readme file 
-# can add them together to show total word count
+# calculated word counts separately for the rmd and the readme file 
+
 wc_rmd <- count_words("Dementia_Occurrence.Rmd")
 wc_readme <- count_words("README.md")
+wc_session <- count_words("sessioninfo.md")
 
+# added to values together to calculate total word count
 ```
-This document: `r wc_rmd`
 
-The README file: `r wc_readme`
+This document: `r wc_rmd`\
+README: `r wc_readme`\
+Session info: `r wc_session`\
+**Total:  `r wc_rmd + wc_readme + wc_session`**
 
-Total:  `r wc_rmd + wc_readme`
-
-# Bibliography
+# Bibliography {-}
 
